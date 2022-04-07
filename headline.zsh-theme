@@ -85,6 +85,7 @@ HEADLINE_DO_HOST='true'
 HEADLINE_DO_PATH='true'
 HEADLINE_DO_GIT_BRANCH='true'
 HEADLINE_DO_GIT_STATUS='true'
+HEADLINE_DO_TIME='true'
 
 # Prompt character
 HEADLINE_PROMPT="%(#.#.%(!.!.$)) " # consider "%#"
@@ -98,6 +99,7 @@ HEADLINE_USER_PREFIX='' # consider " "
 HEADLINE_HOST_PREFIX='' # consider " "
 HEADLINE_PATH_PREFIX='' # consider " "
 HEADLINE_BRANCH_PREFIX='' # consider " "
+HEADLINE_TIME_PREFIX='' # consider " "
 
 # Joints
 HEADLINE_USER_BEGIN=''
@@ -109,6 +111,8 @@ HEADLINE_PAD_TO_BRANCH='' # used if padding between <path> and <branch>
 HEADLINE_BRANCH_TO_STATUS=' ['
 HEADLINE_STATUS_TO_STATUS='' # between each status section, consider "]"
 HEADLINE_STATUS_END=']'
+HEADLINE_TIME_BEGIN=''
+HEADLINE_STATUS_TO_TIME=' '
 
 # Info styles (ANSI SGR codes)
 HEADLINE_STYLE_DEFAULT='' # style applied to entire info line
@@ -122,6 +126,7 @@ HEADLINE_STYLE_HOST=$bold$yellow
 HEADLINE_STYLE_PATH=$bold$blue
 HEADLINE_STYLE_BRANCH=$bold$cyan
 HEADLINE_STYLE_STATUS=$bold$magenta
+HEADLINE_STYLE_TIME=$bold$green
 
 # Line styles
 HEADLINE_STYLE_JOINT_LINE=$HEADLINE_STYLE_JOINT
@@ -130,6 +135,7 @@ HEADLINE_STYLE_HOST_LINE=$HEADLINE_STYLE_HOST
 HEADLINE_STYLE_PATH_LINE=$HEADLINE_STYLE_PATH
 HEADLINE_STYLE_BRANCH_LINE=$HEADLINE_STYLE_BRANCH
 HEADLINE_STYLE_STATUS_LINE=$HEADLINE_STYLE_STATUS
+HEADLINE_STYLE_TIME_LINE=$HEADLINE_STYLE_TIME
 
 # Git branch characters
 HEADLINE_GIT_HASH=':' # hash prefix to distinguish from branch
@@ -318,12 +324,13 @@ headline_preexec() {
 add-zsh-hook precmd headline_precmd
 headline_precmd() {
   # Information
-  local user_str host_str path_str branch_str status_str
+  local user_str host_str path_str branch_str status_str time_now
   [[ $HEADLINE_DO_USER == 'true' ]] && user_str=$USER
   [[ $HEADLINE_DO_HOST == 'true' ]] && host_str=$(hostname -s)
   [[ $HEADLINE_DO_PATH == 'true' ]] && path_str=$(print -rP '%~')
   [[ $HEADLINE_DO_GIT_BRANCH == 'true' ]] && branch_str=$(headline_git_branch)
   [[ $HEADLINE_DO_GIT_STATUS == 'true' ]] && status_str=$(headline_git_status)
+  [[ $HEADLINE_DO_TIME == 'true' ]] && time_now=$(date +"[%H:%M]")
 
   # Trimming
   if (( $COLUMNS < 35 && ${#path_str} )); then
@@ -343,7 +350,14 @@ headline_precmd() {
 
   # Prompt construction
   local git_len len
+  if (( ${#time_now} )); then
+   _headline_part JOINT "$HEADLINE_TIME_BEGIN" right
+    _headline_part TIME "$HEADLINE_TIME_PREFIX$time_now" right
+  fi
   if (( ${#status_str} )); then
+    if (( ${#_HEADLINE_INFO_RIGHT} )); then
+      _headline_part JOINT "$HEADLINE_STATUS_TO_TIME" right
+    fi
     _headline_part JOINT "$HEADLINE_STATUS_END" right
     _headline_part STATUS "$HEADLINE_STATUS_PREFIX$status_str" right
     _headline_part JOINT "$HEADLINE_BRANCH_TO_STATUS" right
